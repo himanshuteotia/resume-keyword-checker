@@ -120,3 +120,19 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+![Home](image-6.png)
+
+![Add new job](image-7.png)
+
+![Analytics](image-8.png)
+
+![Job insights](image-3.png)
+
+![Select job and send email](image-4.png)
+
+![Adding notes](image-9.png)
+
+![Job details](image-10.png)
+
+![Manage Skills](image-11.png)
