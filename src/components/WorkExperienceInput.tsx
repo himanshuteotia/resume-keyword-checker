@@ -42,6 +42,24 @@ function WorkExperienceInput({
     setExperiences(experiences.filter((_, i) => i !== idx));
   };
 
+  const moveExperienceUp = (idx: number) => {
+    if (idx === 0) return; // Can't move first item up
+    const newExperiences = [...experiences];
+    const temp = newExperiences[idx];
+    newExperiences[idx] = newExperiences[idx - 1];
+    newExperiences[idx - 1] = temp;
+    setExperiences(newExperiences);
+  };
+
+  const moveExperienceDown = (idx: number) => {
+    if (idx === experiences.length - 1) return; // Can't move last item down
+    const newExperiences = [...experiences];
+    const temp = newExperiences[idx];
+    newExperiences[idx] = newExperiences[idx + 1];
+    newExperiences[idx + 1] = temp;
+    setExperiences(newExperiences);
+  };
+
   return (
     <div>
       <label className="block font-medium mb-1">Work Experience</label>
@@ -51,14 +69,35 @@ function WorkExperienceInput({
             key={idx}
             className="mb-2 p-2 border rounded bg-gray-50 flex flex-col gap-1 relative"
           >
-            <button
-              type="button"
-              className="absolute top-1 right-2 text-red-500 hover:text-red-700"
-              onClick={() => removeExperience(idx)}
-            >
-              &times;
-            </button>
-            <div className="font-semibold">
+            <div className="absolute top-1 right-2 flex space-x-1">
+              <button
+                type="button"
+                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                onClick={() => moveExperienceUp(idx)}
+                disabled={idx === 0}
+                title="Move Up"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                onClick={() => moveExperienceDown(idx)}
+                disabled={idx === experiences.length - 1}
+                title="Move Down"
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                className="text-red-500 hover:text-red-700 focus:outline-none"
+                onClick={() => removeExperience(idx)}
+                title="Remove"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="font-semibold mt-4">
               {exp.title} @ {exp.company}
             </div>
             <div className="text-xs text-gray-500">

@@ -23,20 +23,62 @@ function AchievementsInput({
     setAchievements(achievements.filter((_, i) => i !== idx));
   };
 
+  const moveAchievementUp = (idx: number) => {
+    if (idx === 0) return; // Can't move first item up
+    const newAchievements = [...achievements];
+    const temp = newAchievements[idx];
+    newAchievements[idx] = newAchievements[idx - 1];
+    newAchievements[idx - 1] = temp;
+    setAchievements(newAchievements);
+  };
+
+  const moveAchievementDown = (idx: number) => {
+    if (idx === achievements.length - 1) return; // Can't move last item down
+    const newAchievements = [...achievements];
+    const temp = newAchievements[idx];
+    newAchievements[idx] = newAchievements[idx + 1];
+    newAchievements[idx + 1] = temp;
+    setAchievements(newAchievements);
+  };
+
   return (
     <div>
       <label className="block font-medium mb-1">Key Achievements</label>
       <ul className="mb-2">
         {achievements.map((ach, idx) => (
-          <li key={idx} className="flex items-center gap-2 mb-1">
+          <li
+            key={idx}
+            className="flex items-center gap-2 mb-1 p-2 border rounded bg-gray-50"
+          >
             <span className="flex-1">{ach}</span>
-            <button
-              type="button"
-              className="text-red-500 hover:text-red-700"
-              onClick={() => removeAchievement(idx)}
-            >
-              &times;
-            </button>
+            <div className="flex space-x-1">
+              <button
+                type="button"
+                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                onClick={() => moveAchievementUp(idx)}
+                disabled={idx === 0}
+                title="Move Up"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                onClick={() => moveAchievementDown(idx)}
+                disabled={idx === achievements.length - 1}
+                title="Move Down"
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                className="text-red-500 hover:text-red-700 focus:outline-none"
+                onClick={() => removeAchievement(idx)}
+                title="Remove"
+              >
+                &times;
+              </button>
+            </div>
           </li>
         ))}
       </ul>

@@ -5,6 +5,7 @@ import AchievementsInput from "./components/AchievementsInput.tsx";
 import WorkExperienceInput from "./components/WorkExperienceInput.tsx";
 import TemplatesPage from "./pages/TemplatesPage.tsx";
 import AtsFriendlyTemplatesPage from "./pages/AtsFriendlyTemplatesPage.tsx"; // Import the new page
+import EmailResumeModal from "./components/EmailResumeModal.tsx";
 
 type Experience = {
   title: string;
@@ -15,6 +16,10 @@ type Experience = {
 };
 
 const MainPage = () => {
+  const [currentTemplate, setCurrentTemplate] = useState<ResumeTemplate | null>(
+    null
+  );
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [skills, setSkills] = useState([] as string[]);
   const [achievements, setAchievements] = useState([] as string[]);
   const [experiences, setExperiences] = useState([] as Experience[]);
@@ -72,6 +77,7 @@ const MainPage = () => {
       setSkills([]);
       setAchievements([]);
       setExperiences([]);
+      setCurrentTemplate(null);
       // Clear other personal details if they were part of the template structure
       // and if you add corresponding state/inputs to the MainPage form.
       // e.g., setMainPageName(''); setMainPageEmail(''); etc.
@@ -91,6 +97,7 @@ const MainPage = () => {
       setSkills(template.commonSkills || []);
       setAchievements(template.commonAchievements || []);
       setExperiences(template.workHistory || []);
+      setCurrentTemplate(template);
 
       // If you decide to add personal details to the MainPage form:
       // setName(template.personalDetails.name); // Example, assuming you add a `name` state to MainPage
@@ -123,28 +130,65 @@ const MainPage = () => {
   };
 
   const handleAnalyze = async () => {
+    console.log("handleAnalyze: called");
+    const resume = buildResumeText();
+    console.log("handleAnalyze: resume:", resume);
+    console.log("handleAnalyze: JD:", jd);
     setLoading(true);
     setError(null);
     setAnalyzed(false);
     try {
-      const resume = buildResumeText();
-      const res = await fetch("http://localhost:4000/analyze", {
+      const res = await fetch("http://localhost:5001/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resume, jd }),
       });
+      console.log(
+        "handleAnalyze: fetch returned status",
+        res.status,
+        "ok?",
+        res.ok
+      );
       if (!res.ok) throw new Error("Server error");
       const data = await res.json();
+      console.log("handleAnalyze: data received:", data);
       setMatched(data.matched);
       setMissing(data.missing);
       setSuggestions(data.suggestions);
       setAnalyzed(true);
     } catch (err: any) {
+      console.error("handleAnalyze: error caught:", err);
       setError(err.message || "Unknown error");
     } finally {
       setLoading(false);
     }
   };
+
+  // Build email body for changes
+  const buildEmailBody = () => {
+    let body = "";
+    body += "Resume Content:\n" + buildResumeText() + "\n";
+    if (matched.length)
+      body += "Matched Keywords: " + matched.join(", ") + "\n";
+    if (missing.length)
+      body += "Missing Keywords: " + missing.join(", ") + "\n";
+    if (suggestions.length)
+      body += "Suggestions:\n" + suggestions.map((s) => "- " + s).join("\n");
+    return body;
+  };
+
+  // Compute resume text once
+  const resumeText = buildResumeText();
+
+  // Compute merged resumeData
+  const mergedResumeData = currentTemplate
+    ? {
+        ...currentTemplate,
+        commonSkills: skills,
+        commonAchievements: achievements,
+        workHistory: experiences,
+      }
+    : null;
 
   return (
     <>
@@ -200,14 +244,18 @@ const MainPage = () => {
         <button
           className="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition font-semibold disabled:opacity-50"
           onClick={handleAnalyze}
-          disabled={
-            loading ||
-            !jd ||
-            (!skills.length && !achievements.length && !experiences.length)
-          }
+          disabled={loading || !jd || resumeText.trim() === ""}
         >
           {loading ? "Analyzing..." : "Analyze"}
         </button>
+        {mergedResumeData && (
+          <button
+            className="ml-4 bg-green-600 text-white px-6 py-2 rounded shadow hover:bg-green-700 transition font-semibold"
+            onClick={() => setIsEmailModalOpen(true)}
+          >
+            Email Resume
+          </button>
+        )}
       </div>
       {error && <div className="text-red-600 text-center mb-4">{error}</div>}
       {analyzed && (
@@ -257,6 +305,16 @@ const MainPage = () => {
             </ul>
           </div>
         </>
+      )}
+      {/* Email modal for home */}
+      {mergedResumeData && (
+        <EmailResumeModal
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
+          userTemplateId={selectedTemplateId || ""}
+          atsStyleId="classic"
+          resumeData={mergedResumeData}
+        />
       )}
     </>
   );

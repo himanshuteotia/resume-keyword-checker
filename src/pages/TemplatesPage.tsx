@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import SkillsInput from "../components/SkillsInput.tsx";
 import AchievementsInput from "../components/AchievementsInput.tsx";
 import WorkExperienceInput from "../components/WorkExperienceInput.tsx";
+import EmailResumeModal from "../components/EmailResumeModal.tsx";
 
 // Define the structure for a resume template (matches backend schema)
 interface ResumeTemplate {
@@ -36,22 +37,23 @@ const TemplatesPage = () => {
   const [portfolio, setPortfolio] = useState("");
   const [summary, setSummary] = useState(""); // Added summary state
 
-  const [commonSkills, setCommonSkills] = useState<string[]>([]);
-  const [commonAchievements, setCommonAchievements] = useState<string[]>([]);
-  const [workHistory, setWorkHistory] = useState<ResumeTemplate["workHistory"]>(
-    []
-  );
+  const [commonSkills, setCommonSkills] = useState([]);
+  const [commonAchievements, setCommonAchievements] = useState([]);
+  const [workHistory, setWorkHistory] = useState([]);
 
   const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState(null);
 
-  const [savedTemplates, setSavedTemplates] = useState<ResumeTemplate[]>([]);
+  const [savedTemplates, setSavedTemplates] = useState([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState(null);
 
-  const [editingTemplate, setEditingTemplate] = useState<ResumeTemplate | null>(
-    null
-  );
+  const [editingTemplate, setEditingTemplate] = useState(null);
+
+  // New state for email modal
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [selectedTemplateForEmail, setSelectedTemplateForEmail] =
+    useState(null);
 
   const API_URL = "http://localhost:5001/api/templates"; // Backend API URL
 
@@ -179,6 +181,11 @@ const TemplatesPage = () => {
     } finally {
       setTimeout(() => setSaveMessage(null), 3000);
     }
+  };
+
+  const handleEmailTemplate = (template) => {
+    setSelectedTemplateForEmail(template);
+    setIsEmailModalOpen(true);
   };
 
   return (
@@ -403,6 +410,21 @@ const TemplatesPage = () => {
               </div>
               <div className="space-x-2 flex items-center">
                 <button
+                  onClick={() => handleEmailTemplate(template)}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md transition-colors duration-200 text-sm font-medium flex items-center"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-1"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                  </svg>
+                  Email
+                </button>
+                <button
                   onClick={() => handleEditTemplate(template)}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md transition-colors duration-200 text-sm font-medium flex items-center"
                 >
@@ -441,6 +463,20 @@ const TemplatesPage = () => {
             </li>
           ))}
         </ul>
+      )}
+
+      {/* Email Resume Modal */}
+      {selectedTemplateForEmail && (
+        <EmailResumeModal
+          isOpen={isEmailModalOpen}
+          onClose={() => {
+            setIsEmailModalOpen(false);
+            setSelectedTemplateForEmail(null);
+          }}
+          userTemplateId={selectedTemplateForEmail._id || ""}
+          atsStyleId="classic"
+          resumeData={selectedTemplateForEmail}
+        />
       )}
     </div>
   );

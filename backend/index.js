@@ -1,8 +1,12 @@
+// Load environment variables from .env file
+require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const pdfRoutes = require("./routes/pdfRoutes"); // Import PDF routes
+const { spawn } = require("child_process");
 
 const app = express();
 const PORT = process.env.PORT || 5001; // Ensure this port is different from your frontend dev server
@@ -193,106 +197,50 @@ app.delete("/api/templates/:id", async (req, res) => {
 // Mount the PDF generation routes
 app.use("/api", pdfRoutes);
 
-// Simple keyword extraction (same as frontend logic)
+// Call local ollama LLM to analyze resume vs JD and output JSON
+
+function analyzeWithLlama(resume, jd) {
+  // Prompt must return only the JSON object, no extra text
+  const instruction = `You are an assistant that compares a resume against a job description. Return output strictly as a JSON object with keys "matched", "missing", and "suggestions". Do NOT include any explanatory text outside the JSON object.\n- matched: array of JD keywords present in the resume.\n- missing: array of JD keywords not in the resume.\n- suggestions: array of improvement suggestions based on missing keywords.`;
+
+  const prompt = `${instruction}\n\nJob description:\n${jd}\n\nResume:\n${resume}`;
+
+  return new Promise((resolve, reject) => {
+    const ollama = spawn("ollama", ["run", "llama3.2"]);
+    let output = "";
+    let error = "";
+
+    ollama.stdout.on("data", (data) => {
+      output += data.toString();
+    });
+
+    ollama.stderr.on("data", (data) => {
+      error += data.toString();
+    });
+
+    ollama.on("close", (code) => {
+      if (code !== 0) return reject(new Error(error));
+      // Extract JSON object from any surrounding text
+      const match = output.match(/(\{[\s\S]*\})/);
+      if (match) {
+        return resolve(match[1].trim());
+      }
+      return reject(new Error("No JSON object found in LLM output: " + output));
+    });
+
+    // Write the prompt
+    ollama.stdin.write(prompt);
+    ollama.stdin.end();
+  });
+}
+
+// The legacy extractKeywords can be used as fallback if needed
 function extractKeywords(text) {
-  const stopwords = [
-    "the",
-    "and",
-    "for",
-    "with",
-    "that",
-    "this",
-    "from",
-    "are",
-    "was",
-    "but",
-    "have",
-    "has",
-    "had",
-    "not",
-    "you",
-    "your",
-    "will",
-    "can",
-    "all",
-    "any",
-    "our",
-    "out",
-    "who",
-    "how",
-    "why",
-    "when",
-    "where",
-    "which",
-    "their",
-    "they",
-    "his",
-    "her",
-    "she",
-    "him",
-    "its",
-    "been",
-    "were",
-    "also",
-    "more",
-    "may",
-    "such",
-    "than",
-    "then",
-    "them",
-    "these",
-    "those",
-    "use",
-    "using",
-    "used",
-    "on",
-    "in",
-    "at",
-    "to",
-    "of",
-    "a",
-    "an",
-    "is",
-    "it",
-    "as",
-    "by",
-    "be",
-    "or",
-    "if",
-    "we",
-    "i",
-    "my",
-    "me",
-    "so",
-    "do",
-    "does",
-    "did",
-    "job",
-    "role",
-    "work",
-    "skills",
-    "skill",
-    "responsibilities",
-    "requirements",
-    "qualification",
-    "qualifications",
-    "should",
-    "must",
-    "good",
-    "strong",
-    "excellent",
-    "etc",
-    "etc.",
-  ];
-  return Array.from(
-    new Set(
-      text
-        .toLowerCase()
-        .replace(/[^a-zA-Z0-9\s]/g, " ")
-        .split(/\s+/)
-        .filter((word) => word.length > 2 && !stopwords.includes(word))
-    )
-  );
+  const words = text
+    .toLowerCase()
+    .replace(/[^a-zA-Z0-9\s]/g, " ")
+    .split(/\s+/);
+  return Array.from(new Set(words.filter((w) => w.length > 2)));
 }
 
 function suggestionsFromMissing(missing) {
@@ -305,17 +253,29 @@ function suggestionsFromMissing(missing) {
   ];
 }
 
-app.post("/analyze", (req, res) => {
+// Analyze endpoint using LLM
+app.post("/analyze", async (req, res) => {
   const { resume, jd } = req.body;
-  if (!resume || !jd) {
+  if (!resume || !jd)
     return res.status(400).json({ error: "Both resume and jd are required." });
+  try {
+    const output = await analyzeWithLlama(resume, jd);
+    const parsed = JSON.parse(output);
+    // Ensure keys exist
+    const matched = parsed.matched || [];
+    const missing = parsed.missing || [];
+    const suggestions = parsed.suggestions || suggestionsFromMissing(missing);
+    res.json({ matched, missing, suggestions });
+  } catch (err) {
+    console.error("LLM analyze error, falling back:", err);
+    // Fallback to simple extraction
+    const jdKeywords = extractKeywords(jd);
+    const resumeKeywords = extractKeywords(resume);
+    const matched = jdKeywords.filter((kw) => resumeKeywords.includes(kw));
+    const missing = jdKeywords.filter((kw) => !resumeKeywords.includes(kw));
+    const suggestions = suggestionsFromMissing(missing);
+    res.json({ matched, missing, suggestions });
   }
-  const jdKeywords = extractKeywords(jd);
-  const resumeKeywords = extractKeywords(resume);
-  const matched = jdKeywords.filter((kw) => resumeKeywords.includes(kw));
-  const missing = jdKeywords.filter((kw) => !resumeKeywords.includes(kw));
-  const suggestions = suggestionsFromMissing(missing);
-  res.json({ matched, missing, suggestions });
 });
 
 app.listen(PORT, () => {

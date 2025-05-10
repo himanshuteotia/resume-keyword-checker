@@ -23,6 +23,8 @@ async function generatePdfFromHtml(htmlContent) {
     });
     console.log("generatePdfFromHtml: Puppeteer launched.");
     const page = await browser.newPage();
+    // Ensure the viewport is large enough to capture the full width of our template
+    await page.setViewport({ width: 1200, height: 800 });
     console.log("generatePdfFromHtml: New page created.");
 
     // Set content and wait for all network activity to cease, or a timeout
@@ -38,10 +40,10 @@ async function generatePdfFromHtml(htmlContent) {
       format: "A4",
       printBackground: true, // Important for styles to be applied
       margin: {
-        top: "20mm",
-        right: "20mm",
-        bottom: "20mm",
-        left: "20mm",
+        top: "10mm",
+        right: "10mm",
+        bottom: "10mm",
+        left: "10mm",
       },
     });
     console.log("generatePdfFromHtml: PDF buffer generated.");

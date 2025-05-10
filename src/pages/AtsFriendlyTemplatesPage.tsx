@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-// Removed html2canvas and jspdf imports
+import React, { useState, useEffect } from "react";
+import EmailResumeModal from "../components/EmailResumeModal.tsx";
 
 // Define the structure for user's saved resume data templates (similar to TemplatesPage)
 interface UserResumeTemplate {
@@ -30,7 +30,7 @@ interface AtsStyleTemplate {
   name: string;
   description: string;
   // In a real scenario, this might contain layout components or functions
-  render: (data: UserResumeTemplate) => React.ReactNode;
+  render: (data: UserResumeTemplate) => JSX.Element;
 }
 
 // --- Sample ATS Template Styles ---
@@ -187,15 +187,17 @@ const atsTemplates: AtsStyleTemplate[] = [
 ];
 
 const AtsFriendlyTemplatesPage = () => {
-  const [userTemplates, setUserTemplates] = useState<UserResumeTemplate[]>([]);
-  const [selectedUserTemplateId, setSelectedUserTemplateId] =
-    useState<string>("");
-  const [selectedAtsStyleId, setSelectedAtsStyleId] = useState<string>("");
+  const [userTemplates, setUserTemplates] = useState(
+    [] as UserResumeTemplate[]
+  );
+  const [selectedUserTemplateId, setSelectedUserTemplateId] = useState("");
+  const [selectedAtsStyleId, setSelectedAtsStyleId] = useState("");
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   const [isLoadingUserTemplates, setIsLoadingUserTemplates] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [previewContent, setPreviewContent] = useState<React.ReactNode | null>(
-    null
+  const [fetchError, setFetchError] = useState(null as string | null);
+  const [previewContent, setPreviewContent] = useState(
+    null as JSX.Element | null
   );
   const [isDownloading, setIsDownloading] = useState(false);
   // const previewRef = useRef<HTMLDivElement>(null); // No longer needed for client-side canvas
@@ -303,6 +305,25 @@ const AtsFriendlyTemplatesPage = () => {
     }
   };
 
+  const handleOpenEmailModal = () => {
+    if (!selectedUserTemplateId || !selectedAtsStyleId) {
+      alert(
+        "Please select both an ATS style and one of your data templates before sending an email."
+      );
+      return;
+    }
+    setIsEmailModalOpen(true);
+  };
+
+  const handleCloseEmailModal = () => {
+    setIsEmailModalOpen(false);
+  };
+
+  // Determine the selected resume data to pass to email modal
+  const selectedResumeData = userTemplates.find(
+    (t) => t._id === selectedUserTemplateId
+  );
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-2xl font-bold mb-6 text-center">
@@ -396,6 +417,15 @@ const AtsFriendlyTemplatesPage = () => {
         >
           {isDownloading ? "Downloading..." : "Download Resume"}
         </button>
+        <button
+          onClick={handleOpenEmailModal}
+          disabled={
+            !selectedUserTemplateId || !selectedAtsStyleId || isDownloading
+          }
+          className="bg-yellow-600 text-white px-6 py-2 rounded shadow hover:bg-yellow-700 transition font-semibold disabled:opacity-50"
+        >
+          Email Resume
+        </button>
       </div>
       {fetchError && isDownloading && (
         <p className="text-center text-red-500 text-sm mb-4">
@@ -417,6 +447,14 @@ const AtsFriendlyTemplatesPage = () => {
           </div>
         </div>
       )}
+
+      <EmailResumeModal
+        isOpen={isEmailModalOpen}
+        onClose={handleCloseEmailModal}
+        userTemplateId={selectedUserTemplateId}
+        atsStyleId={selectedAtsStyleId}
+        resumeData={selectedResumeData}
+      />
     </div>
   );
 };

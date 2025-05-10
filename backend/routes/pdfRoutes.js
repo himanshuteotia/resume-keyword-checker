@@ -1,6 +1,7 @@
 // backend/routes/pdfRoutes.js
 const express = require("express");
 const { generateResumePdf } = require("../pdf-generator");
+const nodemailer = require("nodemailer");
 
 const router = express.Router();
 
@@ -81,6 +82,62 @@ router.post("/generate-pdf", async (req, res) => {
     res
       .status(500)
       .json({ message: "An unexpected error occurred on the server." });
+  }
+});
+
+router.post("/email-resume", async (req, res) => {
+  const { recipientEmail, subject, emailBody, templateId, resumeData } =
+    req.body;
+
+  if (!recipientEmail || !subject || !emailBody || !resumeData) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  try {
+    // Validate template ID - only accept 'classic' or 'modern'
+    const validTemplateId = ["classic", "modern"].includes(templateId)
+      ? templateId
+      : "classic"; // Default to classic if invalid
+
+    console.log(`Email resume: Using template ID: ${validTemplateId}`);
+
+    // Generate PDF for the resume
+    const pdfBuffer = await generateResumePdf(resumeData, validTemplateId);
+
+    // Create a nodemailer transporter
+    const transporter = nodemailer.createTransport({
+      service: process.env.EMAIL_SERVICE || "gmail",
+      port: 465,
+      secure: true, // true for 465, false for other ports
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // Setup email data
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: recipientEmail,
+      subject: subject,
+      text: emailBody,
+      attachments: [
+        {
+          filename: `${
+            resumeData.personalDetails?.name || "resume"
+          }_${validTemplateId}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    };
+
+    // Send email
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: "Email sent successfully" });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    res.status(500).json({ message: "Failed to send email" });
   }
 });
 
