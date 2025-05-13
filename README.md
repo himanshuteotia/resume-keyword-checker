@@ -218,7 +218,3 @@ Your MCP server exposes two main tools:
 
 - [Anthropic Claude Tool Use Documentation](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview)
 - [Model Context Protocol (MCP) Inspector](https://modelcontextprotocol.io/docs/tools/inspector)
-
----
-
-If you need a code sample for the Claude client or want to see a full integration example, let us know!
