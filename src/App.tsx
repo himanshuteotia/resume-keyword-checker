@@ -29,6 +29,7 @@ interface ResumeTemplate {
   commonSkills: string[];
   commonAchievements: string[];
   workHistory: Experience[];
+  summary: string;
 }
 
 const MainPage = () => {
@@ -127,6 +128,7 @@ const MainPage = () => {
     }
     setLoading(true);
     setError(null);
+    console.log(currentTemplate);
     try {
       // Prepare personalDetails from currentTemplate or fallback
       const personalDetails = currentTemplate?.personalDetails || {
@@ -135,6 +137,7 @@ const MainPage = () => {
         phone: "",
         linkedin: "",
         portfolio: "",
+        summary: "",
       };
       // Determine if updating or creating new: update only if name matches existing or matches loaded template name
       const existing = savedTemplates.find(
@@ -160,6 +163,7 @@ const MainPage = () => {
             commonSkills: skills,
             commonAchievements: achievements,
             workHistory: experiences,
+            summary: currentTemplate?.summary || "",
           }),
         });
         if (!response.ok) throw new Error("Failed to update template");
@@ -176,6 +180,7 @@ const MainPage = () => {
             commonSkills: skills,
             commonAchievements: achievements,
             workHistory: experiences,
+            summary: currentTemplate?.summary || "",
           }),
         });
         if (!response.ok) {

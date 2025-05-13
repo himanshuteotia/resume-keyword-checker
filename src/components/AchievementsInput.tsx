@@ -39,7 +39,6 @@ function AchievementsInput({
 
   return (
     <div>
-      <label className="block font-medium mb-1">Key Achievements</label>
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="achievements-droppable" direction="vertical">
           {(provided) => (

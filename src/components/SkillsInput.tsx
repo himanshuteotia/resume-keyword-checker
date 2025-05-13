@@ -36,7 +36,6 @@ function SkillsInput({ skills, setSkills }: SkillsInputProps) {
 
   return (
     <div>
-      <label className="block font-medium mb-1">Skills</label>
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="skills-droppable" direction="horizontal">
           {(provided) => (

@@ -297,15 +297,13 @@ const TemplatesPage = () => {
         </div>
 
         <div className="border p-4 rounded-md">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Common Skills
-          </h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Skills</h3>
           <SkillsInput skills={commonSkills} setSkills={setCommonSkills} />
         </div>
 
         <div className="border p-4 rounded-md">
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Common Achievements
+            Achievements
           </h3>
           <AchievementsInput
             achievements={commonAchievements}

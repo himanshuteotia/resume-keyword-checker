@@ -58,7 +58,6 @@ function WorkExperienceInput({
 
   return (
     <div>
-      <label className="block font-medium mb-1">Work Experience</label>
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="workexp-droppable" direction="vertical">
           {(provided) => {
