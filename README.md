@@ -120,3 +120,105 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+# Resume MCP Server
+
+This server provides Model Context Protocol (MCP) support for fetching resume templates and sending resumes via email. You can integrate it with LLMs like Claude (Anthropic) using tool use (function calling).
+
+## Features
+
+- **Get Resume Templates:**
+  - Use the MCP tool `get_templates` to fetch all available resume templates from MongoDB.
+- **Send Resume via Email:**
+  - Use the MCP tool `send_resume` to generate a PDF from a selected template and send it via email.
+
+## Environment Variables
+
+Set these environment variables for email sending:
+
+```
+EMAIL_USER=your_gmail@gmail.com
+EMAIL_PASS=your_gmail_app_password
+EMAIL_FROM=your_gmail@gmail.com
+```
+
+## How to Run
+
+```bash
+npm install
+node backend/mcp-server.js
+```
+
+## Testing with MCP Inspector
+
+To test the server using the MCP Inspector:
+
+```bash
+npx @modelcontextprotocol/inspector node backend/mcp-server.js
+```
+
+## Example MCP Tool Calls
+
+### 1. Get All Resume Templates
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "get_templates",
+    "arguments": {}
+  }
+}
+```
+
+### 2. Send Resume via Email
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "send_resume",
+    "arguments": {
+      "email": "himanshuteotia7@gmail.com",
+      "template": "Senior Software Developer",
+      "message": "Hi,\n\nPlease find my resume attached for your consideration.\n\nThanks,\nHimanshu"
+    }
+  }
+}
+```
+- The `message` field is optional. If not provided, a default message will be used.
+
+## Notes
+- Templates are stored in the `ResumeTemplate` collection in MongoDB.
+- The email is sent with a PDF attachment.
+- The MCP response will include an error or success message.
+
+---
+
+## Integrating with Claude (Anthropic) Tool Use
+
+You can connect this MCP server to Claude using Anthropic's tool use (function calling) feature. This allows Claude to:
+- Fetch available resume templates
+- Send a resume via email
+
+### 1. Expose Your MCP Server Tools
+
+Your MCP server exposes two main tools:
+- `get_templates`: Fetches all available resume templates from MongoDB.
+- `send_resume`: Generates a PDF from a selected template and sends it via email.
+
+### 2. Example User Prompts for Claude
+
+- **To get all templates:**
+  - "Show me all available resume templates."
+- **To send a resume:**
+  - "Send my Senior Software Developer resume to himanshuteotia7@gmail.com with the message: 'Hi, please find my resume attached for your consideration.'"
+
+### 3. References
+
+- [Anthropic Claude Tool Use Documentation](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview)
+- [Model Context Protocol (MCP) Inspector](https://modelcontextprotocol.io/docs/tools/inspector)
+
+---
+
+If you need a code sample for the Claude client or want to see a full integration example, let us know!
