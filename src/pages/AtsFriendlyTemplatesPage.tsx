@@ -362,7 +362,7 @@ const AtsFriendlyTemplatesPage = () => {
             htmlFor="userTemplateSelect"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            2. Select Your Resume Data
+            2. Select Your Resume Template
           </label>
           {isLoadingUserTemplates && (
             <p className="text-xs text-gray-500">Loading your templates...</p>
