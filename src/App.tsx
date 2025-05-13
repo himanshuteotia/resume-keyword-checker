@@ -15,9 +15,25 @@ type Experience = {
   description: string;
 };
 
+// Define ResumeTemplate at top
+interface ResumeTemplate {
+  _id?: string;
+  templateName: string;
+  personalDetails: {
+    name: string;
+    email: string;
+    phone: string;
+    linkedin?: string;
+    portfolio?: string;
+  };
+  commonSkills: string[];
+  commonAchievements: string[];
+  workHistory: Experience[];
+}
+
 const MainPage = () => {
-  const [currentTemplate, setCurrentTemplate] = useState<ResumeTemplate | null>(
-    null
+  const [currentTemplate, setCurrentTemplate] = useState(
+    null as ResumeTemplate | null
   );
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [skills, setSkills] = useState([] as string[]);
@@ -29,58 +45,42 @@ const MainPage = () => {
   const [suggestions, setSuggestions] = useState([] as string[]);
   const [analyzed, setAnalyzed] = useState(false as boolean);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null as string | null);
 
-  const [savedTemplates, setSavedTemplates] = useState<any[]>([]); // Using any for now, define a proper type later
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
-
-  // Define ResumeTemplate interface locally for MainPage, or import if shared
-  interface ResumeTemplate {
-    _id?: string;
-    templateName: string;
-    personalDetails: {
-      name: string;
-      email: string;
-      phone: string;
-      linkedin?: string;
-      portfolio?: string;
-    };
-    commonSkills: string[];
-    commonAchievements: string[];
-    workHistory: Experience[]; // Assuming Experience type is compatible
-  }
+  const [savedTemplates, setSavedTemplates] = useState([] as any[]); // Using any for now, define a proper type later
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [templateNameHome, setTemplateNameHome] = useState("");
 
   const API_URL_TEMPLATES = "http://localhost:5001/api/templates";
 
+  // Fetch saved templates for dropdown (extracted for reuse)
+  const fetchTemplates = async () => {
+    try {
+      const response = await fetch(API_URL_TEMPLATES);
+      if (!response.ok) throw new Error("Failed to fetch templates");
+      const data = await response.json();
+      setSavedTemplates(data);
+    } catch (err: any) {
+      console.error("Error fetching templates:", err.message);
+    }
+  };
+
   useEffect(() => {
-    // Fetch saved templates for the dropdown
-    const fetchTemplates = async () => {
-      try {
-        const response = await fetch(API_URL_TEMPLATES);
-        if (!response.ok) {
-          throw new Error("Failed to fetch templates for dropdown");
-        }
-        const data: ResumeTemplate[] = await response.json();
-        setSavedTemplates(data);
-      } catch (err: any) {
-        console.error("Error fetching templates for main page:", err.message);
-        setError("Could not load templates. Please try again later.");
-      }
-    };
+    // Initial load of templates
     fetchTemplates();
   }, []);
 
   const handleTemplateSelect = async (templateId: string) => {
     setSelectedTemplateId(templateId);
     if (!templateId) {
+      setTemplateNameHome("");
+    }
+    if (!templateId) {
       // Clear form if "Select a template..." is chosen
       setSkills([]);
       setAchievements([]);
       setExperiences([]);
       setCurrentTemplate(null);
-      // Clear other personal details if they were part of the template structure
-      // and if you add corresponding state/inputs to the MainPage form.
-      // e.g., setMainPageName(''); setMainPageEmail(''); etc.
       return;
     }
     try {
@@ -98,6 +98,7 @@ const MainPage = () => {
       setAchievements(template.commonAchievements || []);
       setExperiences(template.workHistory || []);
       setCurrentTemplate(template);
+      setTemplateNameHome(template.templateName);
 
       // If you decide to add personal details to the MainPage form:
       // setName(template.personalDetails.name); // Example, assuming you add a `name` state to MainPage
@@ -107,6 +108,90 @@ const MainPage = () => {
     } catch (err: any) {
       console.error("Error loading template details:", err.message);
       setError("Failed to load template details. Please check console.");
+    }
+  };
+
+  // Save updates to the currently loaded template
+  const handleSaveTemplate = async () => {
+    if (!templateNameHome.trim()) {
+      alert("Please enter a template name.");
+      return;
+    }
+    // Check for duplicate name (other than current loaded template)
+    const duplicate = savedTemplates.find(
+      (t) => t.templateName === templateNameHome && t._id !== selectedTemplateId
+    );
+    if (duplicate) {
+      setError("Template name already exists! Please choose a different name.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      // Prepare personalDetails from currentTemplate or fallback
+      const personalDetails = currentTemplate?.personalDetails || {
+        name: "",
+        email: "",
+        phone: "",
+        linkedin: "",
+        portfolio: "",
+      };
+      // Determine if updating or creating new: update only if name matches existing or matches loaded template name
+      const existing = savedTemplates.find(
+        (t) => t.templateName === templateNameHome
+      );
+      let templateId: string | null = null;
+      if (existing) {
+        templateId = existing._id;
+      } else if (
+        selectedTemplateId &&
+        currentTemplate?.templateName === templateNameHome
+      ) {
+        templateId = selectedTemplateId;
+      }
+      if (templateId) {
+        // Update existing template
+        const response = await fetch(`${API_URL_TEMPLATES}/${templateId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            templateName: templateNameHome,
+            personalDetails,
+            commonSkills: skills,
+            commonAchievements: achievements,
+            workHistory: experiences,
+          }),
+        });
+        if (!response.ok) throw new Error("Failed to update template");
+        alert("Template updated successfully!");
+        setSelectedTemplateId(templateId);
+      } else {
+        // Create new template
+        const response = await fetch(API_URL_TEMPLATES, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            templateName: templateNameHome,
+            personalDetails,
+            commonSkills: skills,
+            commonAchievements: achievements,
+            workHistory: experiences,
+          }),
+        });
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.message || "Failed to create template");
+        }
+        const newTemplate = await response.json();
+        alert("Template created successfully!");
+        setSelectedTemplateId(newTemplate._id);
+      }
+      await fetchTemplates();
+    } catch (err: any) {
+      console.error("handleSaveTemplate error:", err);
+      alert(err.message || "Error saving template");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -164,19 +249,6 @@ const MainPage = () => {
     }
   };
 
-  // Build email body for changes
-  const buildEmailBody = () => {
-    let body = "";
-    body += "Resume Content:\n" + buildResumeText() + "\n";
-    if (matched.length)
-      body += "Matched Keywords: " + matched.join(", ") + "\n";
-    if (missing.length)
-      body += "Missing Keywords: " + missing.join(", ") + "\n";
-    if (suggestions.length)
-      body += "Suggestions:\n" + suggestions.map((s) => "- " + s).join("\n");
-    return body;
-  };
-
   // Compute resume text once
   const resumeText = buildResumeText();
 
@@ -196,24 +268,39 @@ const MainPage = () => {
         <label htmlFor="templateSelect" className="block font-medium mb-1">
           Load from Template
         </label>
-        <select
-          id="templateSelect"
-          value={selectedTemplateId}
-          onChange={(e) => handleTemplateSelect(e.target.value)}
-          className="w-full border border-gray-300 rounded p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          aria-label="Select a resume template to load"
-        >
-          <option value="">Select a template...</option>
-          {savedTemplates.map((template) => (
-            <option key={template._id} value={template._id}>
-              {template.templateName}
-            </option>
-          ))}
-        </select>
+        <div className="flex gap-2 mb-4">
+          <select
+            id="templateSelect"
+            value={selectedTemplateId}
+            onChange={(e) => handleTemplateSelect(e.target.value)}
+            className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            aria-label="Select a resume template to load"
+          >
+            <option value="">Select a template...</option>
+            {savedTemplates.map((template) => (
+              <option key={template._id} value={template._id}>
+                {template.templateName}
+              </option>
+            ))}
+          </select>
+        </div>
         {/* Display error related to template loading if any */}
         {error && selectedTemplateId && (
           <p className="text-red-500 text-sm mt-1">{error}</p>
         )}
+      </div>
+      <div className="bg-white rounded-lg shadow p-6 mb-4">
+        <label htmlFor="templateNameHome" className="block font-medium mb-1">
+          Template Name
+        </label>
+        <input
+          id="templateNameHome"
+          type="text"
+          value={templateNameHome}
+          onChange={(e) => setTemplateNameHome(e.target.value)}
+          className="w-full border border-gray-300 rounded p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          placeholder="Enter or select a template name"
+        />
       </div>
 
       <div className="bg-white rounded-lg shadow p-6 mb-4">
@@ -249,12 +336,23 @@ const MainPage = () => {
           {loading ? "Analyzing..." : "Analyze"}
         </button>
         {mergedResumeData && (
-          <button
-            className="ml-4 bg-green-600 text-white px-6 py-2 rounded shadow hover:bg-green-700 transition font-semibold"
-            onClick={() => setIsEmailModalOpen(true)}
-          >
-            Email Resume
-          </button>
+          <>
+            <button
+              className="ml-4 bg-green-600 text-white px-6 py-2 rounded shadow hover:bg-green-700 transition font-semibold"
+              onClick={() => setIsEmailModalOpen(true)}
+            >
+              Email Resume
+            </button>
+            {selectedTemplateId && (
+              <button
+                className="ml-4 bg-yellow-600 text-white px-6 py-2 rounded shadow hover:bg-yellow-700 transition font-semibold"
+                onClick={handleSaveTemplate}
+                disabled={loading}
+              >
+                Save Template
+              </button>
+            )}
+          </>
         )}
       </div>
       {error && <div className="text-red-600 text-center mb-4">{error}</div>}
@@ -354,10 +452,10 @@ function App() {
           />{" "}
           {/* Add new route */}
         </Routes>
+        <footer className="mt-8 text-gray-400 text-xs text-center">
+          Made with ❤️ in React + Tailwind CSS
+        </footer>
       </div>
-      <footer className="mt-8 text-gray-400 text-xs text-center">
-        Made with ❤️ in React + Tailwind CSS
-      </footer>
     </div>
   );
 }

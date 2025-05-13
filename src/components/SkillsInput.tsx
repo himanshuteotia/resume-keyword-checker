@@ -1,4 +1,10 @@
 import React, { useState } from "react";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
 
 type SkillsInputProps = {
   skills: string[];
@@ -20,26 +26,54 @@ function SkillsInput({ skills, setSkills }: SkillsInputProps) {
     setSkills(skills.filter((s) => s !== skill));
   };
 
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const reordered = Array.from(skills);
+    const [removed] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, removed);
+    setSkills(reordered);
+  };
+
   return (
     <div>
       <label className="block font-medium mb-1">Skills</label>
-      <div className="flex gap-2 flex-wrap mb-2">
-        {skills.map((skill) => (
-          <span
-            key={skill}
-            className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex items-center gap-1 text-sm"
-          >
-            {skill}
-            <button
-              type="button"
-              className="ml-1 text-blue-500 hover:text-red-500"
-              onClick={() => removeSkill(skill)}
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="skills-droppable" direction="horizontal">
+          {(provided) => (
+            <div
+              className="flex gap-2 flex-wrap mb-2"
+              ref={provided.innerRef}
+              {...provided.droppableProps}
             >
-              &times;
-            </button>
-          </span>
-        ))}
-      </div>
+              {skills.map((skill, idx) => (
+                <Draggable draggableId={skill} index={idx}>
+                  {(provided, snapshot) => (
+                    <span
+                      key={skill}
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      className={`bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex items-center gap-1 text-sm ${
+                        snapshot.isDragging ? "ring-2 ring-blue-400" : ""
+                      }`}
+                    >
+                      {skill}
+                      <button
+                        type="button"
+                        className="ml-1 text-blue-500 hover:text-red-500"
+                        onClick={() => removeSkill(skill)}
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
       <div className="flex gap-2">
         <input
           className="border border-gray-300 rounded p-2 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-400"

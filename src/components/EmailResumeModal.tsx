@@ -21,10 +21,10 @@ const EmailResumeModal = ({
     "Please find attached my resume for your consideration."
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -48,6 +48,7 @@ const EmailResumeModal = ({
           emailBody,
           templateId: atsStyleId,
           resumeData,
+          templateName: userTemplateId, // include the actual template name
         }),
       });
 

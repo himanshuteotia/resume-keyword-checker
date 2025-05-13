@@ -53,9 +53,10 @@ router.post("/generate-pdf", async (req, res) => {
     // Set headers for PDF download
     res.setHeader("Content-Type", "application/pdf");
     // Suggest a filename for the download
-    const filename = `${
-      userData.templateName || "resume"
-    }_${styleId}.pdf`.replace(/[^a-z0-9_.-]/gi, "_"); // Sanitize filename
+    const filename = `${userData.templateName || "resume"}.pdf`.replace(
+      /[^a-z0-9_.-]/gi,
+      "_"
+    ); // Sanitize filename
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     console.log(
       `Setting headers: Content-Type: application/pdf, Content-Disposition: attachment; filename="${filename}"`
@@ -86,8 +87,14 @@ router.post("/generate-pdf", async (req, res) => {
 });
 
 router.post("/email-resume", async (req, res) => {
-  const { recipientEmail, subject, emailBody, templateId, resumeData } =
-    req.body;
+  const {
+    recipientEmail,
+    subject,
+    emailBody,
+    templateId,
+    resumeData,
+    templateName,
+  } = req.body;
 
   if (!recipientEmail || !subject || !emailBody || !resumeData) {
     return res.status(400).json({ message: "Missing required fields" });
@@ -124,8 +131,8 @@ router.post("/email-resume", async (req, res) => {
       attachments: [
         {
           filename: `${
-            resumeData.personalDetails?.name || "resume"
-          }_${validTemplateId}.pdf`,
+            templateName || resumeData.personalDetails?.name || "resume"
+          }.pdf`,
           content: pdfBuffer,
           contentType: "application/pdf",
         },

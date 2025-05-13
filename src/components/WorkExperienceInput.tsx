@@ -1,4 +1,10 @@
 import React, { useState } from "react";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
 
 type Experience = {
   title: string;
@@ -42,71 +48,70 @@ function WorkExperienceInput({
     setExperiences(experiences.filter((_, i) => i !== idx));
   };
 
-  const moveExperienceUp = (idx: number) => {
-    if (idx === 0) return; // Can't move first item up
-    const newExperiences = [...experiences];
-    const temp = newExperiences[idx];
-    newExperiences[idx] = newExperiences[idx - 1];
-    newExperiences[idx - 1] = temp;
-    setExperiences(newExperiences);
-  };
-
-  const moveExperienceDown = (idx: number) => {
-    if (idx === experiences.length - 1) return; // Can't move last item down
-    const newExperiences = [...experiences];
-    const temp = newExperiences[idx];
-    newExperiences[idx] = newExperiences[idx + 1];
-    newExperiences[idx + 1] = temp;
-    setExperiences(newExperiences);
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const reordered = Array.from(experiences);
+    const [removed] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, removed);
+    setExperiences(reordered);
   };
 
   return (
     <div>
       <label className="block font-medium mb-1">Work Experience</label>
-      <ul className="mb-2">
-        {experiences.map((exp, idx) => (
-          <li
-            key={idx}
-            className="mb-2 p-2 border rounded bg-gray-50 flex flex-col gap-1 relative"
-          >
-            <div className="absolute top-1 right-2 flex space-x-1">
-              <button
-                type="button"
-                className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                onClick={() => moveExperienceUp(idx)}
-                disabled={idx === 0}
-                title="Move Up"
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="workexp-droppable" direction="vertical">
+          {(provided) => {
+            return (
+              <ul
+                className="mb-2"
+                ref={provided.innerRef}
+                {...provided.droppableProps}
               >
-                ↑
-              </button>
-              <button
-                type="button"
-                className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                onClick={() => moveExperienceDown(idx)}
-                disabled={idx === experiences.length - 1}
-                title="Move Down"
-              >
-                ↓
-              </button>
-              <button
-                type="button"
-                className="text-red-500 hover:text-red-700 focus:outline-none"
-                onClick={() => removeExperience(idx)}
-                title="Remove"
-              >
-                &times;
-              </button>
-            </div>
-            <div className="font-semibold mt-4">
-              {exp.title} @ {exp.company}
-            </div>
-            <div className="text-xs text-gray-500">
-              {exp.startDate} - {exp.endDate}
-            </div>
-            <div className="text-sm">{exp.description}</div>
-          </li>
-        ))}
-      </ul>
+                {experiences.map((exp, idx) => (
+                  <Draggable
+                    draggableId={exp.title + exp.company + idx}
+                    index={idx}
+                  >
+                    {(provided, snapshot) => {
+                      return (
+                        <li
+                          key={exp.title + exp.company + idx}
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className={`mb-2 p-2 border rounded bg-gray-50 flex flex-col gap-1 relative ${
+                            snapshot.isDragging ? "ring-2 ring-blue-400" : ""
+                          }`}
+                        >
+                          <div className="absolute top-1 right-2 flex space-x-1">
+                            <button
+                              type="button"
+                              className="text-red-500 hover:text-red-700 focus:outline-none"
+                              onClick={() => removeExperience(idx)}
+                              title="Remove"
+                            >
+                              &times;
+                            </button>
+                          </div>
+                          <div className="font-semibold mt-4">
+                            {exp.title} @ {exp.company}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {exp.startDate} - {exp.endDate}
+                          </div>
+                          <div className="text-sm">{exp.description}</div>
+                        </li>
+                      );
+                    }}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </ul>
+            );
+          }}
+        </Droppable>
+      </DragDropContext>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
         <input
           className="border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"

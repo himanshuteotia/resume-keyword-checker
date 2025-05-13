@@ -108,34 +108,17 @@ const TemplatesPage = () => {
     };
 
     try {
-      let response;
-      let responseData;
-
-      if (editingTemplate && editingTemplate._id) {
-        // Update existing template
-        response = await fetch(`${API_URL}/${editingTemplate._id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(templateData),
-        });
-        responseData = await response.json();
-        if (!response.ok) {
-          throw new Error(responseData.message || "Failed to update template.");
-        }
-        setSaveMessage("Template updated successfully!");
-      } else {
-        // Create new template
-        response = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(templateData),
-        });
-        responseData = await response.json();
-        if (!response.ok) {
-          throw new Error(responseData.message || "Failed to save template.");
-        }
-        setSaveMessage("Template saved successfully!");
+      // Always create new template
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(templateData),
+      });
+      const responseData = await response.json();
+      if (!response.ok) {
+        throw new Error(responseData.message || "Failed to save template.");
       }
+      setSaveMessage("Template saved successfully!");
 
       clearForm();
       fetchTemplates(); // Refresh the list of templates
