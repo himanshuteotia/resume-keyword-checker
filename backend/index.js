@@ -1,12 +1,14 @@
-// Load environment variables from .env file
-require("dotenv").config();
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
+import pdfRoutes from "./routes/pdfRoutes.js";
+import mongoose from "mongoose";
+import { ResumeTemplate } from "./model.js";
+import { spawn } from "child_process";
 
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const pdfRoutes = require("./routes/pdfRoutes"); // Import PDF routes
-const { spawn } = require("child_process");
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001; // Ensure this port is different from your frontend dev server
@@ -25,41 +27,6 @@ mongoose
     console.log("MongoDB connected successfully to resumeTemplatesDB.")
   )
   .catch((err) => console.error("MongoDB connection error:", err));
-
-// Define Mongoose Schema for ResumeTemplate
-const experienceSchema = new mongoose.Schema(
-  {
-    title: { type: String, required: true },
-    company: { type: String, required: true },
-    startDate: { type: String, required: true },
-    endDate: { type: String, required: true },
-    description: { type: String, required: false, default: "" }, // Changed required to false and added default empty string
-  },
-  { _id: false }
-);
-
-const personalDetailsSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    email: { type: String, required: true },
-    phone: { type: String, required: true },
-    linkedin: String,
-    portfolio: String,
-  },
-  { _id: false }
-);
-
-const resumeTemplateSchema = new mongoose.Schema({
-  templateName: { type: String, required: true, unique: true }, // Ensure template names are unique
-  personalDetails: { type: personalDetailsSchema, required: true },
-  summary: { type: String, default: "" }, // Added summary field
-  commonSkills: { type: [String], default: [] },
-  commonAchievements: { type: [String], default: [] },
-  workHistory: { type: [experienceSchema], default: [] },
-  createdAt: { type: Date, default: Date.now },
-});
-
-const ResumeTemplate = mongoose.model("ResumeTemplate", resumeTemplateSchema);
 
 // API Endpoints
 // POST: Create a new resume template

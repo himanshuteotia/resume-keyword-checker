@@ -1,5 +1,3 @@
-// backend/resume-templates.js
-
 function getClassicTemplateHTML(data) {
   return `
     <!DOCTYPE html>
@@ -343,7 +341,7 @@ function getCreativeTemplateHTML(data) {
   `;
 }
 
-module.exports = {
+export {
   getClassicTemplateHTML,
   getModernTemplateHTML,
   getCreativeTemplateHTML,

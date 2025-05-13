@@ -1,9 +1,8 @@
-// backend/pdf-generator.js
-const puppeteer = require("puppeteer");
-const {
+import puppeteer from "puppeteer";
+import {
   getClassicTemplateHTML,
   getModernTemplateHTML,
-} = require("./resume-templates");
+} from "./resume-templates.js";
 
 async function generatePdfFromHtml(htmlContent) {
   let browser = null;
@@ -87,4 +86,4 @@ async function generateResumePdf(userData, styleId) {
   return generatePdfFromHtml(htmlContent);
 }
 
-module.exports = { generateResumePdf };
+export { generateResumePdf };

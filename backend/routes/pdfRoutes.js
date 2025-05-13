@@ -1,7 +1,7 @@
 // backend/routes/pdfRoutes.js
-const express = require("express");
-const { generateResumePdf } = require("../pdf-generator");
-const nodemailer = require("nodemailer");
+import express from "express";
+import { generateResumePdf } from "../pdf-generator.js";
+import nodemailer from "nodemailer";
 
 const router = express.Router();
 
@@ -148,4 +148,4 @@ router.post("/email-resume", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
