@@ -1,4 +1,4 @@
-# Resume Keyword Checker
+# Smart Resume Builder
 
 A full-stack application that helps job seekers optimize their resumes by checking for keyword matches against job descriptions and managing resume templates.
 
