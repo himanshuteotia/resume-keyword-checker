@@ -1,4 +1,4 @@
-# Resume Keyword Checker
+# Smart Resume Builder
 
 A full-stack application that helps job seekers optimize their resumes by checking for keyword matches against job descriptions and managing resume templates.
 
@@ -213,6 +213,12 @@ Your MCP server exposes two main tools:
   - "Show me all available resume templates."
 - **To send a resume:**
   - "Send my Senior Software Developer resume to himanshuteotia7@gmail.com with the message: 'Hi, please find my resume attached for your consideration.'"
+
+<img width="743" alt="image" src="https://github.com/user-attachments/assets/f7d4bedd-0105-4b2e-95c9-c3c27556ed4b" />
+
+
+<img width="729" alt="image" src="https://github.com/user-attachments/assets/93fb8488-6f54-4ebb-8184-ddf26fcff06e" />
+
 
 ### 3. References
 
